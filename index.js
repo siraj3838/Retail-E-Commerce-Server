@@ -1,14 +1,14 @@
 const express = require('express');
-const cors = require('cors');
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
+const cors = require('cors');
+require('dotenv').config()
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5020;
 
 
 app.use(cors());
 app.use(express.json());
 
-require('dotenv').config()
 
 const uri = `mongodb+srv://${process.env.DB_KEY}:${process.env.DB_PASS}@cluster0.hq29e8f.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -24,47 +24,69 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+
     const amazonCollection = client.db("amazonDB").collection("amazon");
+    const secondAmazonCollection = client.db("amazonDB").collection('selectCart');
     
+    // add to cart get data
+    app.post('/selectCart', async(req, res) => {
+      const user = req.body;
+      const result = await secondAmazonCollection.insertOne(user);
+      res.send(result);
+    })
+    app.get('/selectCart', async(req, res)=> {
+      const result = await secondAmazonCollection.find().toArray();
+      res.send(result);
+    })
+    app.delete('selectCart/:id', async(req, res)=> {
+      const id = req.params.body;
+      const query = {_id: new ObjectId(id)};
+      const result = await secondAmazonCollection.deleteOne(query);
+      res.send(result);
+    })
+
 
     // amazon work
-    app.post('/amazon', async(req, res)=>{
-        const user = req.body;
-        console.log(user)
+    app.post('/amazon', async (req, res) => {
+      const user = req.body;
+      console.log(user)
       const result = await amazonCollection.insertOne(user);
       res.send(result);
     })
-    app.get('/amazon', async(req, res)=>{
-        const result = await amazonCollection.find().toArray();
-        res.send(result)
+    app.get('/amazon', async (req, res) => {
+      const result = await amazonCollection.find().toArray();
+      res.send(result)
     })
 
-    app.get(`/amazon/:id`, async(req, res)=> {
+
+    app.get('/amazon/:id', async (req, res) => {
       const id = req.params.id;
-      const query = {_id: new ObjectId(id)}
-      const result = await amazonCollection.findOne(query);
+      const query = { _id: new ObjectId(id) };
+      const result = await amazonCollection.findOne(query)
       res.send(result);
     })
-    app.put('/amazon/:id', async(req, res)=> {
+    app.put('/amazon/:id', async (req, res) => {
       const id = req.params.id;
-      const data = req.body;
-      const query = {_id: new ObjectId(id)};
+      const product = req.body;
+      const filter = { _id: new ObjectId(id) };
       const options = { upsert: true };
-      const updateData = {
-          $set: {
-              name: data.name,
-              email: data.email,
-              password: data.password,
-          }
+      const updateProduct = {
+        $set: {
+          category: product.category,
+          name: product.name,
+          photo: product.photo,
+          brandName: product.brandName,
+          price: product.price,
+          rating: product.rating,
+        }
       }
-      const result = await amazonCollection.updateOne(query, updateData, options);
+      const result = await amazonCollection.updateOne(filter, updateProduct, options)
       res.send(result);
-  })
+    })
 
-    
-    
-    // Send a ping to confirm a successful connectio
+
+
+    // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
@@ -76,9 +98,9 @@ run().catch(console.dir);
 
 
 
-app.get('/', (req, res)=> {
-    res.send('My Server Running')
+app.get('/', (req, res) => {
+  res.send('My Server Running')
 })
-app.listen(port, ()=>{
-    console.log(`My port all time running from port ${port}`)
+app.listen(port, () => {
+  console.log(`My port all time running from port ${port}`)
 })
