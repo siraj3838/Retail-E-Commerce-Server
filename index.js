@@ -12,7 +12,7 @@ require('dotenv').config()
 
 const uri = `mongodb+srv://${process.env.DB_KEY}:${process.env.DB_PASS}@cluster0.hq29e8f.mongodb.net/?retryWrites=true&w=majority`;
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API versio
+// Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -40,6 +40,27 @@ async function run() {
         res.send(result)
     })
 
+    app.get(`/amazon/:id`, async(req, res)=> {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}
+      const result = await amazonCollection.findOne(query);
+      res.send(result);
+    })
+    app.put('/amazon/:id', async(req, res)=> {
+      const id = req.params.id;
+      const data = req.body;
+      const query = {_id: new ObjectId(id)};
+      const options = { upsert: true };
+      const updateData = {
+          $set: {
+              name: data.name,
+              email: data.email,
+              password: data.password,
+          }
+      }
+      const result = await amazonCollection.updateOne(query, updateData, options);
+      res.send(result);
+  })
 
     
     
