@@ -27,8 +27,27 @@ async function run() {
 
     const amazonCollection = client.db("amazonDB").collection("amazon");
     const secondAmazonCollection = client.db("cartsDB").collection('cart');
+    const reviewCollection = client.db("reviewDB").collection('review');
+    // feedBack user
+    
+    app.post('/feedbacks', async(req, res)=>{
+      const reviewUser = req.body;
+      console.log(reviewUser);
+      const result = await reviewCollection.insertOne(reviewUser);
+      res.send(result);
+    })
+    app.get('/feedbacks', async(req, res)=>{
+      const result = await reviewCollection.find().toArray();
+      res.send(result);
+      console.log(result);
+    })
 
-
+    app.get(`/feedbacks/:id`, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await reviewCollection.findOne(query)
+      res.send(result);
+    })
 
 
     // amazon work
@@ -87,6 +106,8 @@ async function run() {
       res.send(result);
       console.log(result)
     })
+
+    
 
 
     // Send a ping to confirm a successful connection
